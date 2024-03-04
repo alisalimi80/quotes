@@ -1,0 +1,55 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django related
+*.log
+*.pot
+*.pyc
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Ignore secret settings file
+.env
+
+# Ignore environment file
+.envrc
+
+# Ignore local development settings
+local_settings.py
+
+# Ignore IDE files
+.vscode/
+.idea/
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore compiled Python bytecode
+*.pyc
+
+# Ignore coverage report files
+htmlcov/
+.coverage
+
+# Ignore test database
+test_db.sqlite3
+
+# Ignore pipenv virtual environment
+Pipfile
+Pipfile.lock
+
+# Ignore backup files
+*~
+
+# Ignore any other temporary files or directories
+*.swp
+*.bak
+*.save
+
+# Virtual environment
+
+venv
