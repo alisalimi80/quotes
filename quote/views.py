@@ -3,20 +3,73 @@ from rest_framework.views import APIView , Response , status
 from .serializers import QuoteSerializer , TagSerializer
 from .models import Quote , Tag
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema ,OpenApiParameter
 import requests
 from .tasks import get_random_quote
+from django.db.models import Q
 
 # Create your views here.
 
 class QuoteAllView(APIView):
     serializer_class = QuoteSerializer
 
-    @extend_schema(tags=["quote"])
+    @extend_schema(tags=["quote"],parameters=[
+            OpenApiParameter(
+                name='Author',
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Author full name (default: None)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name='limit',
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="limit for count of item you see (default: 1)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name='Term',
+                location=OpenApiParameter.QUERY,
+                type=str,
+                description="Term query to filter contents (default: None)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name='Tags',
+                location=OpenApiParameter.QUERY,
+                type=str,
+                description="Tags query to filter by tags (default: None)",
+                required=False,
+            ),])
+    
     def get(self,request):
+        author = request.query_params.get("Author","")
+        limit = int(request.query_params.get("limit",1))
+        search_query = request.query_params.get("Term", "")
+        tags = request.query_params.get("Tags", None)
+        if tags:
+            tags = tags.split(',') 
+            tag_list = Tag.objects.filter(name__in=tags)
+
+        queryset = Quote.objects.all()
+
         get_random_quote.delay()
-        query = Quote.objects.all()
-        ser_data = QuoteSerializer(instance=query,many=True)
+
+        if search_query:
+            queryset = queryset.filter(
+                Q(content__icontains=search_query))
+        if author:
+            queryset = queryset.filter(author = author)
+        if tags:
+            queryset = queryset.filter(tags__in=tag_list)
+        if limit :
+            queryset = queryset[:limit]
+        else:
+            queryset = queryset[0] 
+
+
+        ser_data = QuoteSerializer(instance=queryset,many=True)
         return Response(ser_data.data,status=status.HTTP_200_OK)
     
 class QuoteDetailView(APIView):
