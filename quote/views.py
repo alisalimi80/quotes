@@ -4,6 +4,8 @@ from .serializers import QuoteSerializer , TagSerializer
 from .models import Quote , Tag
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
+import requests
+from .tasks import get_random_quote
 
 # Create your views here.
 
@@ -12,8 +14,18 @@ class QuoteAllView(APIView):
 
     @extend_schema(tags=["quote"])
     def get(self,request):
+        get_random_quote.delay()
         query = Quote.objects.all()
         ser_data = QuoteSerializer(instance=query,many=True)
+        return Response(ser_data.data,status=status.HTTP_200_OK)
+    
+class QuoteDetailView(APIView):
+    serializer_class = QuoteSerializer
+
+    @extend_schema(tags=["quote"])
+    def get(self,request,pk):
+        query = get_object_or_404(Quote,quote_id=pk)
+        ser_data = QuoteSerializer(instance=query)
         return Response(ser_data.data,status=status.HTTP_200_OK)
     
 class QuoteCreateView(APIView):

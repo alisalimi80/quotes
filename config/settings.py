@@ -137,3 +137,12 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
     # OTHER SETTINGS
 }
+
+CELERY_BROKER_URL = f"amqp://" \
+                    f"user:" \
+                    f"password@" \
+                    f"localhost:" \
+                    f"5672/" \
+                    f"my_vhost"
+
+CELERY_RESULT_BACKEND = "rpc://"
