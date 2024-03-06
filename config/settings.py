@@ -11,11 +11,11 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
+BASE_DIR_STR = str(Path(__file__).resolve().parent.parent)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
@@ -75,12 +75,15 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+print(os.environ['DB_USER'],'-'*90)
+
+DATABASES = {'default': {'ENGINE': 'django.db.backends.postgresql',  # 'django.db.backends.mysql',
+                             'USER': os.environ['DB_USER'],
+                             'PASSWORD': os.environ['DB_PASSWORD'],
+                             'HOST': os.environ['DB_HOST'],
+                             'PORT': os.environ['DB_PORT'],
+                             'NAME': os.environ['DB_DBNAME'],
+                             }}
 
 
 # Password validation
@@ -129,6 +132,12 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+AMQP_USER = os.environ['RABBITMQ_DEFAULT_USER']
+AMQP_PASS = os.environ['RABBITMQ_DEFAULT_PASS']
+AMQP_HOST = os.environ['RABBITMQ_DEFAULT_HOST']
+AMQP_PORT = int(os.environ['RABBITMQ_DEFAULT_PORT'])
+AMQP_VHOST = os.environ['RABBITMQ_DEFAULT_VHOST']
+
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Your Project API',
@@ -139,10 +148,10 @@ SPECTACULAR_SETTINGS = {
 }
 
 CELERY_BROKER_URL = f"amqp://" \
-                    f"user:" \
-                    f"password@" \
-                    f"localhost:" \
-                    f"5672/" \
-                    f"my_vhost"
+                    f"{AMQP_USER}:" \
+                    f"{AMQP_PASS}@" \
+                    f"{AMQP_HOST}:" \
+                    f"{AMQP_PORT}/" \
+                    f"{AMQP_VHOST}"
 
 CELERY_RESULT_BACKEND = "rpc://"

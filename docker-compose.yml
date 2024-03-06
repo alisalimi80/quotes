@@ -1,0 +1,124 @@
+version: "3.7"
+services:
+
+# -------------------------------------------------------------------------------------------------------- application
+  application:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DB_USER=root
+      - DB_PASSWORD=fgdg09843hdg34yhgt43yfdg745
+      - DB_HOST=main_db
+      - DB_PORT=5432
+      - DB_DBNAME=ms_db
+
+      - RABBITMQ_DEFAULT_USER=Admin
+      - RABBITMQ_DEFAULT_PASS=Admin211234
+      - RABBITMQ_DEFAULT_VHOST=defhost
+      - RABBITMQ_DEFAULT_HOST=queue
+      - RABBITMQ_DEFAULT_PORT=5672
+    depends_on:
+      - main_db
+      - queue
+    networks:
+      - quote_network
+    ports:
+      - '8001:8000'
+    volumes:
+      - .:/master
+    logging:
+        options:
+            max-file: "5"
+            max-size: "10m"
+    command: >
+      sh -c "while ! nc -z queue 5672; do echo 'waiting for queue...' & sleep 3; done &&
+              while ! nc -z main_db 5432; do echo 'waiting for main_db...' & sleep 3; done &&
+              python setup.py &&
+              python manage.py runserver 0.0.0.0:8000"
+
+  # ----------------------------------------------------------------------------------------------------------- main_db
+  main_db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_DB=ms_db
+      - POSTGRES_PASSWORD=fgdg09843hdg34yhgt43yfdg745
+    networks:
+      - quote_network
+    ports:
+      - "7676:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    logging:
+        options:
+            max-file: "5"
+            max-size: "10m"
+
+  # --------------------------------------------------------------------------------------------------------- rabbit_mq
+  queue:
+    image: 'rabbitmq:3.8-management-alpine'
+    environment:
+      - RABBITMQ_DEFAULT_USER=Admin
+      - RABBITMQ_DEFAULT_PASS=Admin211234
+      - RABBITMQ_DEFAULT_VHOST=defhost
+    networks:
+      - quote_network
+    ports:
+      - '16672:15672'
+      - '5672:5672'
+    volumes:
+      - queue_data:/var/lib/rabbitmq
+    logging:
+        options:
+            max-file: "5"
+            max-size: '10m'
+
+  # ------------------------------------------------------------------------------------------------------------ celery
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DB_USER=root
+      - DB_PASSWORD=fgdg09843hdg34yhgt43yfdg745
+      - DB_HOST=main_db
+      - DB_PORT=5432
+      - DB_DBNAME=ms_db
+
+      - LOG_DB_TYPE=postgres
+      - LOG_DB_DBNAME=log_db
+      - LOG_DB_USER=root
+      - LOG_DB_PASSWORD=fgdg09843hdg34yhgt43yfdg745
+      - LOG_DB_HOST=log_db
+      - LOG_DB_PORT=5433
+
+      - RABBITMQ_DEFAULT_USER=Admin
+      - RABBITMQ_DEFAULT_PASS=Admin211234
+      - RABBITMQ_DEFAULT_VHOST=defhost
+      - RABBITMQ_DEFAULT_HOST=queue
+      - RABBITMQ_DEFAULT_PORT=5672
+    depends_on:
+      - main_db
+      - queue
+      - application
+    networks:
+      - quote_network
+    volumes:
+      - .:/master
+    logging:
+        options:
+            max-file: "5"
+            max-size: "10m"
+    command: >
+      sh -c "while ! nc -z queue 5672; do echo 'waiting for queue...' & sleep 3; done &&
+              while ! nc -z application 8000; do echo 'waiting for application...' & sleep 3; done &&
+              celery -A config worker -l INFO"
+
+volumes:
+  db_data:
+  queue_data:
+
+networks:
+  quote_network:
+    driver: bridge
