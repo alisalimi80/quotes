@@ -9,6 +9,8 @@ from .tasks import get_random_quote
 from django.db.models import Q
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.permissions import IsAuthenticated , IsAdminUser
+import random
+
 
 # Create your views here.
 
@@ -43,6 +45,13 @@ class QuoteAllView(APIView):
                 type=str,
                 description="Tags query to filter by tags (default: None)",
                 required=False,
+            ),
+            OpenApiParameter(
+                name='Sort',
+                location=OpenApiParameter.QUERY,
+                type=bool,
+                description="if this query set True results return order by date create (default: False)",
+                required=False,
             ),])
     
     def get(self,request):
@@ -50,11 +59,15 @@ class QuoteAllView(APIView):
         limit = int(request.query_params.get("limit",1))
         search_query = request.query_params.get("Term", "")
         tags = request.query_params.get("Tags", None)
+        sort_by_date_create = request.query_params.get("Sort", False)
         if tags:
             tags = tags.split(',') 
             tag_list = Tag.objects.filter(name__in=tags)
 
-        queryset = Quote.objects.all()
+        if sort_by_date_create:
+            queryset = Quote.objects.all().order_by('-dateadded')
+        else:
+            queryset = Quote.objects.all().order_by('?')
 
         get_random_quote.delay()
 
@@ -68,7 +81,8 @@ class QuoteAllView(APIView):
         if limit :
             queryset = queryset[:limit]
         else:
-            queryset = queryset[0] 
+            queryset = queryset[0]
+
 
 
         ser_data = QuoteSerializer(instance=queryset,many=True)
