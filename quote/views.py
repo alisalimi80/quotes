@@ -7,6 +7,8 @@ from drf_spectacular.utils import extend_schema ,OpenApiParameter
 import requests
 from .tasks import get_random_quote
 from django.db.models import Q
+from rest_framework.authentication import BasicAuthentication
+from rest_framework.permissions import IsAuthenticated , IsAdminUser
 
 # Create your views here.
 
@@ -83,6 +85,8 @@ class QuoteDetailView(APIView):
     
 class QuoteCreateView(APIView):
     serializer_class = QuoteSerializer
+    authentication_classes = [BasicAuthentication]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=["quote"])
     def post(self,request):
@@ -95,6 +99,8 @@ class QuoteCreateView(APIView):
     
 class QuoteUpdateView(APIView):
     serializer_class = QuoteSerializer
+    authentication_classes = [BasicAuthentication]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=["quote"])
     def put(self, request, pk):
@@ -107,6 +113,8 @@ class QuoteUpdateView(APIView):
     
 class QuoteDeleteView(APIView):
     serializer_class = QuoteSerializer
+    authentication_classes = [BasicAuthentication]
+    permission_classes = [IsAdminUser]
 
     @extend_schema(tags=["quote"])
     def delete(self,request,pk):
